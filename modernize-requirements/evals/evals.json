@@ -1,0 +1,54 @@
+{
+  "skill_name": "modernize-requirements",
+  "evals": [
+    {
+      "id": 1,
+      "name": "basic-uv-migration",
+      "prompt": "I have a FastAPI project with a requirements.txt from pip freeze. I want to modernize it to use uv with pyproject.toml. The project source is in src/ and tests in tests/. The project name is 'my-fastapi-app'. Please migrate it.",
+      "expected_output": "plan.md, pyproject.toml with PEP 621 format, reports with AST scan results, requirements.in, summary.md. Direct deps should be: fastapi, httpx, pydantic, redis, python-dotenv, pyyaml, python-multipart, uvicorn. Transitive deps like annotated-types, anyio, h11, etc. should NOT appear in pyproject.toml.",
+      "files": ["evals/fixtures/eval-1-basic-uv/"],
+      "assertions": [
+        {"id": "plan-exists", "text": "plan.md was generated in the output directory"},
+        {"id": "pyproject-pep621", "text": "pyproject.toml uses [project] section with PEP 621 format, not [tool.poetry]"},
+        {"id": "direct-deps-correct", "text": "pyproject.toml dependencies include all direct deps: fastapi, httpx, pydantic, redis, python-dotenv, pyyaml, python-multipart, uvicorn"},
+        {"id": "no-transitive-deps", "text": "pyproject.toml dependencies do NOT include transitive deps like annotated-types, anyio, h11, httpcore, sniffio, starlette, click, typing-extensions"},
+        {"id": "summary-exists", "text": "summary.md was generated in the output directory"},
+        {"id": "requirements-in-exists", "text": "requirements.in was generated listing direct dependencies"},
+        {"id": "original-preserved", "text": "Original requirements.txt is still present (not deleted)"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "poetry-dockerfile-migration",
+      "prompt": "I want to migrate this Flask project to use Poetry. The project has a Dockerfile that I also want updated. Source is in src/, tests in tests/. Project name is 'product-api'. Please migrate everything including the Dockerfile.",
+      "expected_output": "plan.md, pyproject.toml with [tool.poetry] format, poetry-compatible Dockerfile replacing pip install with poetry install, reports with AST scan, summary.md. Direct deps: flask, marshmallow, sqlalchemy, requests, pillow, python-dateutil, gunicorn. Dockerfile should use poetry install --only main.",
+      "files": ["evals/fixtures/eval-2-poetry-dockerfile/"],
+      "assertions": [
+        {"id": "plan-exists", "text": "plan.md was generated in the output directory"},
+        {"id": "pyproject-poetry-format", "text": "pyproject.toml uses [tool.poetry.dependencies] section (Poetry-native format)"},
+        {"id": "direct-deps-correct", "text": "pyproject.toml dependencies include all direct deps: flask, marshmallow, sqlalchemy, requests, pillow, python-dateutil, gunicorn"},
+        {"id": "no-transitive-deps", "text": "pyproject.toml dependencies do NOT include transitive deps like blinker, certifi, charset-normalizer, itsdangerous, markupsafe, werkzeug, jinja2"},
+        {"id": "dockerfile-uses-poetry", "text": "Dockerfile uses 'poetry install' instead of 'pip install -r requirements.txt'"},
+        {"id": "dockerfile-copies-pyproject", "text": "Dockerfile copies pyproject.toml (and poetry.lock) for dependency installation, not requirements.txt"},
+        {"id": "dev-deps-separated", "text": "pytest is placed in dev dependency group, not in main dependencies"},
+        {"id": "summary-exists", "text": "summary.md was generated in the output directory"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "uv-old-deps-dockerfile",
+      "prompt": "I need to modernize this data science project to use uv. It has a Dockerfile too. Source in src/, tests in tests/. Project name is 'ml-pipeline'. Some of these packages are older and might have build issues — please handle that. Migrate everything.",
+      "expected_output": "plan.md, pyproject.toml with PEP 621, uv-compatible Dockerfile, reports with AST scan, summary.md. Direct deps: numpy, pandas, scikit-learn, opencv-python, pillow, matplotlib, scipy, requests, pyyaml, python-dateutil, tqdm. Should mention pkg_resources/setuptools build issues and include troubleshooting in plan or summary. Dockerfile should use uv sync.",
+      "files": ["evals/fixtures/eval-3-uv-old-deps/"],
+      "assertions": [
+        {"id": "plan-exists", "text": "plan.md was generated in the output directory"},
+        {"id": "pyproject-pep621", "text": "pyproject.toml uses [project] section with PEP 621 format"},
+        {"id": "direct-deps-correct", "text": "pyproject.toml dependencies include all direct deps: numpy, pandas, scikit-learn, opencv-python, pillow, matplotlib, scipy, requests, pyyaml, python-dateutil, tqdm"},
+        {"id": "no-transitive-deps", "text": "pyproject.toml dependencies do NOT include transitive deps like contourpy, cycler, fonttools, kiwisolver, pyparsing, threadpoolctl, six, packaging, certifi"},
+        {"id": "dockerfile-uses-uv", "text": "Dockerfile uses 'uv sync' instead of 'pip install -r requirements.txt'"},
+        {"id": "pkg-resources-mentioned", "text": "plan.md, summary.md, or pyproject.toml mentions pkg_resources or setuptools build constraint as a potential issue"},
+        {"id": "summary-exists", "text": "summary.md was generated in the output directory"}
+      ]
+    }
+  ]
+}

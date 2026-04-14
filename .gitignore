@@ -1,0 +1,28 @@
+# Workspace (eval outputs, benchmarks, iteration results)
+modernize-requirements-workspace/
+
+# Skill creator tooling (installed via skill-creator, not part of this project)
+.claude/skills/skill-creator/
+
+# Claude commands (auto-generated)
+.claude/commands/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Temporary files
+/tmp/
+*.bak
+
+# OS
+.DS_Store
+
+# Working notes (not part of the skill)
+notes.txt
+notes.txt.bkup
+migration_workflow.md
