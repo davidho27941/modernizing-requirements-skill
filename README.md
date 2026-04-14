@@ -13,9 +13,17 @@ A Claude Code skill that migrates Python projects from `requirements.txt` to mod
 
 ## Install
 
+Copy the skill directory into your Claude Code skills folder:
+
 ```bash
-claude skill install modernize-requirements.skill
+# Project-specific (current project only)
+cp -r modernize-requirements .claude/skills/
+
+# Or personal (available in all projects)
+cp -r modernize-requirements ~/.claude/skills/
 ```
+
+Claude Code automatically discovers skills once the files are in place — no restart needed.
 
 ## Usage
 
