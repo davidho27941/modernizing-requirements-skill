@@ -124,8 +124,28 @@ cp requirements.txt requirements.txt.bak
 [ -f pyproject.toml ] && cp pyproject.toml pyproject.toml.bak
 ```
 
-Record the Python version (`python --version`) — you will need it for
-`requires-python` in pyproject.toml.
+**Determine the Python version** for `requires-python` in pyproject.toml.
+The virtual environment may not exist (the project might be inherited, the
+CI environment might differ, or `.venv` may simply not have been created
+yet), so do not assume `python --version` reflects the intended version.
+Follow this order:
+
+1. **Check project configuration files** — look for an explicit Python
+   version in `setup.py` (`python_requires=`), `setup.cfg`
+   (`python_requires =` under `[options]`), `Dockerfile` (`FROM python:X.Y`),
+   or `.python-version`. These are the most authoritative sources because
+   they represent what the project was designed for.
+2. **If no configuration specifies a version** — check the system Python
+   (`python3 --version`) as a reference point, but do not assume it is
+   correct. Present the detected version to the user and ask them to
+   confirm or choose a different one. For example: *"I didn't find a Python
+   version constraint in any config file. The system Python is 3.11 —
+   should I use `>=3.11`, or do you need to support a different version?"*
+
+Getting this right matters because `requires-python` gates which Python
+versions can install the package. Setting it too high locks out users on
+older versions; setting it too low may allow installation on versions the
+code doesn't actually support.
 
 ---
 
