@@ -10,7 +10,7 @@ A Claude Code skill that migrates Python projects from `requirements.txt` to mod
 4. **Migrates Dockerfiles** — Rewrites `pip install -r requirements.txt` to `uv sync` or `poetry install`
 5. **Handles `pkg_resources` build failures** — Includes setuptools constraint workarounds for older packages broken by setuptools 82+; asks the user for help when workarounds are insufficient instead of upgrading packages
 6. **Preserves pinned versions** — Migrates structure, not content: exact version pins from `requirements.txt` are carried over to `pyproject.toml` without loosening or upgrading
-7. **Documents everything** — Generates `plan.md` before starting and `summary.md` after, with old-vs-new command comparison tables
+7. **Staff-engineer-quality migration plans** — Generates a structured `plan.md` with executive summary, current state assessment, risk analysis, rollback strategy, and files inventory before starting; produces `summary.md` after with old-vs-new command comparison tables
 8. **Smart source discovery** — Locates package directories via `setup.py`/`setup.cfg` rather than blindly scanning the project root; asks the user when no config exists
 9. **Security-conscious** — Skips dot-directories and dotfiles (`.env`, `.git`, `.secrets`, etc.) by default to avoid leaking credentials or sensitive config; only `.claude` and `.venv` are allowed
 10. **Robust Python version detection** — Determines `requires-python` from project config files (`setup.py`, `setup.cfg`, `Dockerfile`, `.python-version`) instead of assuming the system Python is correct; asks the user to confirm when no config is found
