@@ -256,11 +256,22 @@ def top_level_imports(path: Path) -> tuple[set[str], str | None]:
     return names, None
 
 
+# Dot-directories that are safe to enter (everything else starting with '.'
+# is skipped for security — dotfiles/dirs often contain secrets or credentials).
+DOTDIR_ALLOWLIST: set[str] = {".claude", ".venv"}
+
+
 def _should_skip(path: Path) -> bool:
     """Return True if this path should be skipped."""
-    return any(part in SKIP_DIRS for part in path.parts) or any(
-        part.endswith(".egg-info") for part in path.parts
-    )
+    for part in path.parts:
+        if part in SKIP_DIRS:
+            return True
+        if part.endswith(".egg-info"):
+            return True
+        # Skip hidden directories/files unless explicitly allowed
+        if part.startswith(".") and part not in DOTDIR_ALLOWLIST:
+            return True
+    return False
 
 
 def scan(
