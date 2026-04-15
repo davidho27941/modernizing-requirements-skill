@@ -10,14 +10,17 @@ Continue here after completing Phases 0–2 in SKILL.md.
 resolved output. This intermediate step validates that the dependency set
 resolves cleanly before committing to `pyproject.toml`.
 
-1. Create `requirements.in` with only direct runtime dependencies:
+1. Create `requirements.in` with only direct runtime dependencies,
+   preserving the exact version pins from `requirements.txt`:
    ```text
-   # Direct runtime dependencies
-   fastapi>=0.110
-   pydantic>=2
-   httpx
+   # Direct runtime dependencies (versions from requirements.txt)
+   fastapi==0.115.12
+   pydantic==2.11.1
+   httpx==0.28.1
    ```
-   - Use loose version specifiers (`>=`) so the resolver has room.
+   - Preserve the pinned versions (`==`) from `requirements.txt`. Do not
+     loosen them to `>=` — the user's pinned versions represent a tested,
+     working configuration.
    - Keep VCS/URL installs in their PEP 440 form:
      `mypackage @ git+https://github.com/org/mypackage@v1.2.3`
 
@@ -58,17 +61,17 @@ description = ""
 requires-python = ">=3.11"  # based on Phase 0 Python version check
 readme = "README.md"
 dependencies = [
-    # from requirements.in
-    "fastapi>=0.110",
-    "pydantic>=2",
-    "httpx",
+    # from requirements.in — preserve pinned versions
+    "fastapi==0.115.12",
+    "pydantic==2.11.1",
+    "httpx==0.28.1",
 ]
 
 [dependency-groups]  # PEP 735
 dev = [
-    "pytest>=8",
-    "ruff",
-    "mypy",
+    "pytest==8.3.5",
+    "ruff==0.9.1",
+    "mypy==1.14.1",
 ]
 
 [build-system]
@@ -185,6 +188,13 @@ build. Check its `setup.py` or `setup.cfg` on PyPI/GitHub:
 
 Present the user with the failing package(s) and the recommended fix before
 applying it.
+
+**If the build still fails after trying all approaches above**, do not attempt
+to upgrade the package to a different version. The user's pinned versions
+represent a tested configuration. Instead, report the failure clearly —
+include the package name, the error message, and which approaches you tried —
+and ask the user how they want to proceed. They may know of a workaround,
+have access to a private wheel, or may decide to upgrade the package themselves.
 
 ---
 

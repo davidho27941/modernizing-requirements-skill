@@ -10,16 +10,19 @@ Unlike the uv workflow, Poetry has its own resolver built in, so there is no
 need for `pip-compile` as a separate verification step. Instead, you verify
 by letting Poetry resolve directly.
 
-1. Create a temporary `requirements.in` with only direct runtime dependencies.
-   This is not consumed by Poetry — it serves as a human-readable record of
-   the dependency set you identified in Phase 2:
+1. Create a temporary `requirements.in` with only direct runtime dependencies,
+   preserving the exact version pins from `requirements.txt`. This is not
+   consumed by Poetry — it serves as a human-readable record of the dependency
+   set you identified in Phase 2:
    ```text
-   # Direct runtime dependencies
-   fastapi>=0.110
-   pydantic>=2
-   httpx
+   # Direct runtime dependencies (versions from requirements.txt)
+   fastapi==0.115.12
+   pydantic==2.11.1
+   httpx==0.28.1
    ```
-   Use loose version specifiers (`>=`) to give the resolver room.
+   Preserve the pinned versions (`==`) from `requirements.txt`. Do not
+   loosen them to `>=` — the user's pinned versions represent a tested,
+   working configuration.
 
 2. Similarly, create `requirements-dev.in` listing dev-only dependencies.
 
@@ -49,15 +52,15 @@ authors = ["Your Team"]
 
 [tool.poetry.dependencies]
 python = ">=3.11"
-# from Phase 2 direct dependencies
-fastapi = ">=0.110"
-pydantic = ">=2"
-httpx = "*"
+# from Phase 2 direct dependencies — preserve pinned versions
+fastapi = "0.115.12"
+pydantic = "2.11.1"
+httpx = "0.28.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=8"
-ruff = "*"
-mypy = "*"
+pytest = "8.3.5"
+ruff = "0.9.1"
+mypy = "1.14.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -65,7 +68,7 @@ build-backend = "poetry.core.masonry.api"
 ```
 
 **Key differences from PEP 621 (uv) format:**
-- Version specifiers use `=` not `==`, and `*` means "any version".
+- Poetry uses `"X.Y.Z"` (no operator) to mean exact pin, equivalent to `==X.Y.Z`.
 - The `python` dependency is declared explicitly in
   `[tool.poetry.dependencies]`.
 - Dev dependencies go under `[tool.poetry.group.dev.dependencies]` (Poetry
@@ -81,7 +84,7 @@ mypackage = { git = "https://github.com/org/mypackage.git", tag = "v1.2.3" }
 **Optional extras:**
 ```toml
 [tool.poetry.dependencies]
-uvicorn = { version = ">=0.29", extras = ["standard"] }
+uvicorn = { version = "0.29.0", extras = ["standard"] }
 ```
 
 ### If `pyproject.toml` already exists
@@ -117,8 +120,11 @@ Phase 2 has a conflict. Common causes:
 - Two packages require incompatible versions of a shared transitive dep
 - A VCS dependency pins a version that conflicts with another requirement
 
-In that case, review the error output, adjust version specifiers in
-`pyproject.toml`, and re-run `poetry lock`.
+In that case, review the error output and present the conflict to the user.
+Do not change version specifiers yourself — the user's pinned versions
+represent a tested configuration. Ask the user how they want to resolve the
+conflict (they may have context about which version to adjust, or they may
+want to handle it manually).
 
 Verify:
 ```bash
@@ -133,9 +139,10 @@ poetry export -f requirements.txt --without-hashes -o reports/poetry_export.txt
 diff <(sort requirements.txt.bak) <(sort reports/poetry_export.txt)
 ```
 
-This diff shows what changed between the old pinned world and the new
-resolved world. Review it with the user — large version jumps or missing
-packages are worth investigating.
+Because you are preserving the user's pinned versions, this diff should show
+minimal differences. If there are unexpected version changes or missing
+packages, something is off — revisit Phase 3 and present the discrepancies
+to the user.
 
 ### Troubleshooting: `pkg_resources` / setuptools build failures
 
@@ -186,12 +193,6 @@ If the package author has not published wheels, the user can:
   priority = "supplemental"
   ```
 
-**Approach 3: Pin to a version that ships wheels**
-
-Sometimes a slightly newer or older version of the same package provides
-pre-built wheels. Check PyPI's "Download files" page for the package to find
-a version with `.whl` files for the user's platform.
-
 **Important: Poetry has NO `--no-build-isolation` flag**
 
 Unlike uv and pip, Poetry does not support disabling build isolation. The
@@ -212,6 +213,13 @@ failed to build. Check its `setup.py` or `setup.cfg` on PyPI/GitHub:
 
 Present the user with the failing package(s) and the recommended fix before
 applying it.
+
+**If the build still fails after trying all approaches above**, do not attempt
+to upgrade the package to a different version. The user's pinned versions
+represent a tested configuration. Instead, report the failure clearly —
+include the package name, the error message, and which approaches you tried —
+and ask the user how they want to proceed. They may know of a workaround,
+have access to a private wheel, or may decide to upgrade the package themselves.
 
 ---
 
