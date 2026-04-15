@@ -60,6 +60,13 @@ separate them, so the resulting `pyproject.toml` is clean and intentional.
 - Never modify the project's source code. This skill only touches dependency
   and configuration files.
 - Preserve the original `requirements.txt` — the user may need it for rollback.
+- **Do not access dot-directories or dotfiles** (e.g., `.env`, `.git`,
+  `.github`, `.secrets`). The only exceptions are `.claude` (skill resources)
+  and `.venv` (virtual environment detection). Dotfiles often contain secrets,
+  credentials, or sensitive configuration — reading them is unnecessary for
+  dependency migration and risks leaking private data. If the project has a
+  `.python-version` file, you may read it solely to determine the Python
+  version constraint.
 
 **Heads-up: `pkg_resources` removal in setuptools 82+**
 
@@ -141,22 +148,44 @@ This is your "old world" snapshot — you will diff against it later.
 This is the core of the migration. A bundled scanner script does the heavy
 lifting.
 
+### 2.0 Locate the source directories to scan
+
+Before running the scanner, you need to know which directories contain the
+project's source code. Follow this order:
+
+1. **Check for `setup.py` or `setup.cfg`** — if the project has one, parse it
+   to find the package directories (look for `packages=`, `package_dir=`,
+   `py_modules=`, or `find_packages()` calls). This is the most reliable
+   signal for legacy projects that haven't been modernized yet.
+2. **If no `setup.py`/`setup.cfg` exists** — ask the user which directories
+   contain the target source code. Do not guess or scan the entire project
+   tree blindly. For example: *"I don't see a `setup.py` — which directories
+   contain your application code? (e.g., `src/`, `app/`, `myproject/`)"*
+
+This matters because scanning the wrong directories (or the entire repo)
+produces noisy results — it may pick up imports from vendored code, example
+scripts, or unrelated utilities that aren't part of the package.
+
 ### 2.1 Run the scanner
 
 The scanner lives at `scripts/scan_imports.py` (bundled with this skill).
-Run it against the project root:
+Run it against the identified source directories (not blindly against the
+project root):
 
 ```bash
-python <skill-path>/scripts/scan_imports.py <project-root> \
+python <skill-path>/scripts/scan_imports.py <source-directory> \
     --json \
     --first-party <comma-separated-first-party-packages> \
     --include-dev \
     --show-unknown
 ```
 
+If there are multiple source directories (e.g., `src/` and `tests/`), run
+the scanner once per directory and merge the results, tagging `tests/`
+imports as dev dependencies.
+
 The `--first-party` flag excludes the project's own packages. Determine these
-by looking at `src/` layout, top-level package directories, or the existing
-`pyproject.toml` `[project].name`.
+from `setup.py`/`setup.cfg` metadata, `src/` layout, or by asking the user.
 
 The script:
 1. Walks all `.py` files (skipping `.venv`, `build`, `dist`, `__pycache__`, etc.)
