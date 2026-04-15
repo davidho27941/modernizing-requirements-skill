@@ -60,6 +60,16 @@ separate them, so the resulting `pyproject.toml` is clean and intentional.
 - Never modify the project's source code. This skill only touches dependency
   and configuration files.
 - Preserve the original `requirements.txt` — the user may need it for rollback.
+- **Do not upgrade or change dependency versions.** The goal of this skill is
+  to migrate the *structure* (requirements.txt → pyproject.toml), not to
+  change the *content*. If `requirements.txt` pins `numpy==2.2.5`, the
+  generated `pyproject.toml` should use that same version — not a loose
+  `>=2.2` or a newer release. The user chose those versions for a reason
+  (compatibility, testing, production stability). If a build or install fails
+  with the pinned versions — even after applying setuptools workarounds — do
+  not silently upgrade the package. Instead, report the failure to the user
+  and ask them how they want to proceed. They may have context about why a
+  specific version is required that you don't.
 - **Do not access dot-directories or dotfiles** (e.g., `.env`, `.git`,
   `.github`, `.secrets`). The only exceptions are `.claude` (skill resources)
   and `.venv` (virtual environment detection). Dotfiles often contain secrets,
