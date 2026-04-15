@@ -117,13 +117,77 @@ After completing Phase 2, read the appropriate reference file for Phases 3–8:
 ## Phase 0 — Plan & backup
 
 **Before doing anything else**, produce a `plan.md` in the project root. This
-file is for the user to review and approve before you proceed. It should
-contain:
-- Which package manager was selected (uv or Poetry)
-- Each phase you intend to execute and what it will do
-- Which files you will scan (source directories, test directories)
-- Which files you will create or modify
-- Any questions or ambiguities you need the user to clarify
+is a migration plan that anyone on the team — not just the person running the
+skill — should be able to read, understand, and follow. Think of it as a
+document a staff engineer would write before proposing a dependency overhaul
+to the team: it explains the current state, the target state, why the
+migration is happening, what the risks are, and how to roll back if something
+goes wrong.
+
+Before writing the plan, do the reconnaissance work: read `requirements.txt`,
+scan the project structure (source directories, Dockerfiles, config files),
+and check for a Python version constraint. You need this information to write
+a concrete, project-specific plan — not a generic template.
+
+The plan must include these sections:
+
+### 1. Executive summary
+A short paragraph (3–5 sentences) that answers: what are we migrating, why,
+and what does the end state look like? Name the project, the chosen package
+manager, and the key outcome (e.g., "After this migration, `pyproject.toml`
+becomes the single source of truth for dependencies, with `uv.lock` providing
+reproducible installs").
+
+### 2. Current state
+Concrete facts about the project as it exists today:
+- Total number of packages in `requirements.txt`
+- Project layout (source directories, test directories, first-party packages)
+- Python version detected (and where it was found — e.g., "3.11 from Dockerfile")
+- Whether Dockerfiles exist and what dependency patterns they use
+- Whether `setup.py`, `setup.cfg`, or `pyproject.toml` already exist
+- Any notable observations (e.g., "requirements.txt appears to be a full
+  `pip freeze` output — it likely contains many transitive dependencies")
+
+### 3. Migration strategy
+Which package manager was selected and why (if the user stated a preference,
+note it; if you recommended one, explain briefly). Then list each phase with
+a one-line description of what it does and what it produces.
+
+### 4. Risk assessment
+Identify project-specific risks before the migration starts. This is not a
+generic list — it should reflect what you actually found in the project:
+- Packages that are likely to cause build issues (old packages, packages
+  known to use `pkg_resources`, packages without wheels)
+- Potential version conflicts visible from the requirements
+- Dockerfiles with complex dependency patterns that may need careful migration
+- Missing information (e.g., "no Python version constraint found in any config
+  file — will need user confirmation")
+
+If there are no notable risks, say so briefly — but always include this
+section so the reader knows risks were considered.
+
+### 5. Files inventory
+Two tables:
+
+**Files to create:**
+
+| File | Purpose |
+|------|---------|
+| `pyproject.toml` | Authoritative dependency source (PEP 621) |
+| ... | ... |
+
+**Files preserved (not modified):**
+List source files, test files, and `requirements.txt` — confirm that the
+migration does not touch application code.
+
+### 6. Rollback plan
+Explain how to undo the migration if something goes wrong. This should
+reference the backup files (`requirements.txt.bak`, `pyproject.toml.bak`)
+and the git branch, so the user knows they can safely proceed.
+
+### 7. Open questions
+Any ambiguities that need user input before proceeding. If there are none,
+omit this section.
 
 Wait for the user to confirm the plan before moving on.
 
