@@ -1,19 +1,33 @@
 # modernize-requirements
 
-A Claude Code skill that migrates Python projects from `requirements.txt` to modern `pyproject.toml` + lockfile setup, with either **uv** or **Poetry** as the package manager.
+**Stop hand-editing `pyproject.toml`. Let Claude do the migration for you.**
 
-## What it does
+Most Python projects still ship a `requirements.txt` dumped from `pip freeze` — hundreds of pinned lines mixing the packages you actually import with every transitive dependency pip pulled in. Migrating to `pyproject.toml` by hand means guessing which packages are direct, re-learning PEP 621 syntax, wiring up lockfiles, and rewriting Dockerfiles. It's tedious, error-prone, and easy to get wrong.
 
-1. **AST-based import scanning** — Analyzes your Python source code to separate direct dependencies from transitive ones (the ones `pip freeze` dumps in but your code never imports)
-2. **Generates clean `pyproject.toml`** — PEP 621 format for uv, or `[tool.poetry]` format for Poetry
-3. **Produces lockfiles** — `uv.lock` or `poetry.lock` for reproducible installs
-4. **Migrates Dockerfiles** — Rewrites `pip install -r requirements.txt` to `uv sync` or `poetry install`
-5. **Handles `pkg_resources` build failures** — Includes setuptools constraint workarounds for older packages broken by setuptools 82+; asks the user for help when workarounds are insufficient instead of upgrading packages
-6. **Preserves pinned versions** — Migrates structure, not content: exact version pins from `requirements.txt` are carried over to `pyproject.toml` without loosening or upgrading
-7. **Staff-engineer-quality migration plans** — Generates a structured `plan.md` with executive summary, current state assessment, risk analysis, rollback strategy, and files inventory before starting; produces `summary.md` after with old-vs-new command comparison tables
-8. **Smart source discovery** — Locates package directories via `setup.py`/`setup.cfg` rather than blindly scanning the project root; asks the user when no config exists
-9. **Security-conscious** — Skips dot-directories and dotfiles (`.env`, `.git`, `.secrets`, etc.) by default to avoid leaking credentials or sensitive config; only `.claude` and `.venv` are allowed
-10. **Robust Python version detection** — Determines `requires-python` from project config files (`setup.py`, `setup.cfg`, `Dockerfile`, `.python-version`) instead of assuming the system Python is correct; asks the user to confirm when no config is found
+**modernize-requirements** is a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that handles the entire migration in one conversation. Point it at a project with `requirements.txt`, pick **uv** or **Poetry**, and it walks through a structured 9-phase workflow — from planning to lockfile generation to Dockerfile rewrites — while you review and approve each step.
+
+### Why use this over doing it manually?
+
+| Manual migration | With this skill |
+|---|---|
+| Guess which of 200+ frozen packages your code actually imports | AST-based scanner analyzes every `.py` file and separates direct from transitive |
+| Copy-paste version pins and hope you got the format right | Pinned versions carry over exactly — no silent upgrades or loosened constraints |
+| Debug cryptic `pkg_resources` build failures alone | Built-in workarounds for setuptools 82+ breakage, with guided fallback when workarounds aren't enough |
+| Write `pyproject.toml` from memory or Stack Overflow | Generates spec-compliant config: PEP 621 for uv, `[tool.poetry]` for Poetry |
+| Forget to update the Dockerfile | Automatically rewrites `pip install -r requirements.txt` → `uv sync` / `poetry install` |
+
+## Features
+
+- **AST-based import scanning** — Separates direct dependencies from transitive ones using static analysis, not guesswork
+- **Clean `pyproject.toml` generation** — PEP 621 format for uv, or `[tool.poetry]` format for Poetry
+- **Reproducible lockfiles** — `uv.lock` or `poetry.lock`, generated and validated
+- **Dockerfile migration** — Rewrites install commands for the new package manager
+- **Version preservation** — Migrates structure, not content: your exact pins are carried over unchanged
+- **Migration plans** — Generates a structured `plan.md` with executive summary, risk analysis, rollback strategy, and files inventory before touching anything
+- **Smart source discovery** — Finds package directories via `setup.py`/`setup.cfg` instead of blindly scanning the project root
+- **Security-conscious** — Skips dot-directories and dotfiles (`.env`, `.git`, `.secrets`) to avoid leaking credentials
+- **Robust Python version detection** — Reads `setup.py`, `setup.cfg`, `Dockerfile`, `.python-version` to determine `requires-python` correctly
+- **`pkg_resources` handling** — Workarounds for packages broken by setuptools 82+, with user-guided fallback
 
 ## Install
 
